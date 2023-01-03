@@ -1,0 +1,19 @@
+package webserver;
+
+
+
+public class WebServer {
+	
+	public static String directoryPath = "serverfiles/";
+
+    public static void main(String[] args) {
+ 
+        try {
+            ServerListenerThread serverListenerThread = ServerListenerThread.getInstace();
+            serverListenerThread.start();
+        } catch (IllegalThreadStateException e) {
+            e.printStackTrace();
+        }
+    }
+
+}

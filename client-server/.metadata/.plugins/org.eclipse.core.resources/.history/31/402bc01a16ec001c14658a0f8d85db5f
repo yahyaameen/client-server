@@ -1,0 +1,95 @@
+package handleclasses;
+
+
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import messageclasses.WebRequest;
+import webserver.WebServer;
+
+public abstract class Handle {
+	
+	private WebRequest request ;
+	//-------locks---------
+	protected static Object lockSet = new Object();
+	protected static Object lockDelete = new Object();
+	protected static Object lockUpload = new Object();
+	protected static Object lockFContent = new Object();
+	
+		
+	protected static Map<String,List<Handle>> handleRequestSet = new HashMap<String, List<Handle>>();       
+		
+	protected  void waitThePathFile() throws InterruptedException
+	{
+		synchronized(lockSet)
+		{
+			if(handleRequestSet.containsKey(this.getRequest().getFilePath()))
+			{
+				handleRequestSet.get(this.getRequest().getFilePath()).add(this);
+				this.wait();
+			}
+			else
+			{
+			    handleRequestSet.put(this.getRequest().getFilePath(), null);
+			}
+				
+		}
+	}
+
+	
+	protected void freePathFile() 
+	{
+		synchronized(lockSet)
+		{
+			
+			if(handleRequestSet.get(this.getRequest().getFilePath())!=null && !handleRequestSet.get(this.getRequest().getFilePath()).isEmpty())
+			{
+				
+				Handle req = handleRequestSet.get(this.getRequest().getFilePath()).get(0);
+				handleRequestSet.get(this.getRequest().getFilePath()).remove(req);
+				req.notify();
+	
+			}
+			else
+			{
+				handleRequestSet.remove(this.getRequest().getFilePath());
+			}
+		
+		}
+		
+		
+	}
+		
+
+	public WebRequest getRequest() {
+		return request;
+	}
+
+
+
+	public void setRequest(WebRequest request) {
+		this.request = request;
+	}
+	
+	public boolean CheckFilePathroot(String pathfile) {
+		
+		if(pathfile.startsWith(WebServer.directoryPath.substring(0, WebServer.directoryPath.length()-1)))
+		{
+			return true;
+		}
+		
+		return false;
+		
+	}
+
+
+
+	public Handle(WebRequest request) {
+		this.request = request;
+	}
+
+	public abstract WebResponse serve() throws Exception ;
+
+}

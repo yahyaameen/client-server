@@ -1,0 +1,69 @@
+package handleclasses;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import messageclasses.ResponseCode;
+import messageclasses.WebRequest;
+import messageclasses.WebResponse;
+import webserver.WebServer;
+
+public class ViewFolderList extends Handle {
+
+	public ViewFolderList(WebRequest request) {
+		super(request);
+	}
+
+	@Override
+	public String serve() {
+		
+		String body = ""; 
+		
+		
+		synchronized(Handle.lockDelete) {
+			synchronized(Handle.lockUpload) {
+				body = foldersList(); 
+			}
+		}
+		
+		WebResponse response = new WebResponse();
+		response.getResBody().setresbody(body);
+		response.getResHeader().setRequestId(super.getRequest().getReqHeader().getRequestId());
+		response.getResHeader().setResponseCode(ResponseCode.SUCCESS);
+		response.setContentType(super.getRequest().getContentType());
+		String toJsonResponse = response.toJson().toString();
+	
+	
+		return toJsonResponse;
+	}
+
+	private String foldersList() {
+		
+		List<File> resultList = listf(WebServer.directoryPath);
+		String data = resultList.toString();
+			
+		return data;
+	}
+	
+	//list all files in the folder and also sub folders
+	private List<File> listf(String directoryName) {
+		
+        File directory = new File(directoryName);
+        List<File> resultList = new ArrayList<File>();
+
+        // get all the files from a directory
+        File[] fList = directory.listFiles();                
+        resultList.addAll(Arrays.asList(fList));
+        for (File file : fList) {
+            if (file.isDirectory()) {
+					resultList.addAll(listf(file.getPath()));
+            }
+        }
+        return resultList;
+    }  
+	
+	
+
+}
